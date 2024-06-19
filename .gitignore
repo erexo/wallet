@@ -1,0 +1,6 @@
+*.exe
+*.exe~
+*.db
+*.test
+go.work
+go.work.sum
