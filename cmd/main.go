@@ -2,6 +2,9 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/erexo/wallet/internal/domain"
 	"github.com/erexo/wallet/internal/repository"
@@ -33,9 +36,23 @@ func run(dbfile string) error {
 	service := service.New(repo)
 	defer service.Close()
 
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM) // SIGKILL cannot be catched
+
+	errCh := make(chan error, 1)
+
 	// other services should interact here with Service's interface via topic, queue, gRPC, REST or any other form of communication
 
-	return mockDial(service)
+	go func() {
+		errCh <- mockDial(service)
+	}()
+
+	select {
+	case <-sigCh:
+		return nil
+	case err := <-errCh:
+		return err
+	}
 }
 
 func mockDial(service service.Service) error {

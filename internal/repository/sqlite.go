@@ -66,6 +66,7 @@ func (s *sqlite) ChangeFunds(id uuid.UUID, changeFunc ChangeFunc) (domain.Curren
 
 	// cashing current funds is also an option although more risky
 	var funds domain.Currency
+	// sqlite locks entire db on write so there is no concurrency problems, and as mentioned below `FOR UPDATE` can be used to achieve row lock in innodb/mysql/pgsql
 	// "for update" tx lock is not relevant in SQLite but could be useful in ie. MySQL
 	if err := tx.QueryRow("select funds from wallets where id = ?", id).Scan(&funds); err != nil {
 		tx.Rollback()
